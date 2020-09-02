@@ -24,10 +24,19 @@ def load_library_permanently(filename):
     """
     Load an external library
     """
-    with ffi.OutputString() as outerr:
-        if ffi.lib.LLVMPY_LoadLibraryPermanently(
-                _encode_string(filename), outerr):
-            raise RuntimeError(str(outerr))
+    print("load_library_permanently({})".format(filename))
+    from logging import getLogger
+    import os
+    log = getLogger(__name__)
+    log.warning("load_library_permanently({})".format(filename))
+    log.warning("load_library_permanently .. so.environ[PATH] is: {}".format(os.environ['PATH']))
+    try:
+        with ffi.OutputString() as outerr:
+            if ffi.lib.LLVMPY_LoadLibraryPermanently(
+                    _encode_string(filename), outerr):
+                raise RuntimeError(str(outerr)+'\nLIZZY PATH is: {}'.format(os.environ['PATH']))
+    except Exception as e:
+        raise RuntimeError(str(outerr)+'\nLIZZY2 PATH is: {}'.format(os.environ['PATH']))
 
 # ============================================================================
 # FFI

@@ -140,11 +140,31 @@ except ImportError:
 else:
     _lib_paths.append(resource_filename(__name__, _lib_name))
 
+from logging import getLogger
+log = getLogger(__name__)
+log.warning("Load {} .. os.environ[PATH] is: {}".format(_lib_name, os.environ['PATH']))
 
-# Try to load from all of the different paths
+# Try to load from all of the different paths - this doesn't work on Python 3.8 on Windows.
+# Because llvmlite is not fully static and we see the following in Lib/ctypes/__init__.py
+#
+#         if _os.name == "nt":
+#             if winmode is not None:
+#                 mode = winmode
+#             else:
+#                 import nt
+#                 mode = nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
+#                 if '/' in name or '\\' in name:
+#                     self._name = nt._getfullpathname(self._name)
+#                     mode |= nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
+#
+# .. Windows will not use PATH to look up dependent DLLs. We got rid of those flags in the
+# past. What does Python 3.7 do here instead?
+
 for _lib_path in _lib_paths:
+    log.warning("Checking {}".format(_lib_path))
     try:
-        lib = ctypes.CDLL(_lib_path)
+        LOAD_WITH_ALTERED_SEARCH_PATH = 0x00000008
+        lib = ctypes.CDLL(_lib_path, winmode = LOAD_WITH_ALTERED_SEARCH_PATH)
     except OSError:
         continue
     else:
